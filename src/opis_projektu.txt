@@ -1,0 +1,5 @@
+Projekt dotyczy aplikacji wspierającej studentów w planowaniu nauki i zarządzaniu obowiązkami.
+Rozwiązuje problem braku struktury, chaosu informacyjnego i trudności z priorytetyzacją zadań podczas studiów.
+Odbiorcami są studenci w wieku 18–25 lat, którzy chcą zwiększyć produktywność i lepiej organizować czas.
+W aplikacji znajdą się między innymi lista zadań, kalendarz tygodniowy oraz narzędzia do śledzenia postępów.
+Dodatkowe funkcje obejmą proste statystyki i przypomnienia, które pomogą utrzymać regularność nauki.

@@ -1,0 +1,134 @@
+Flowchart: Aplikacja wspierająca planowanie nauki i zarządzanie obowiązkami (dla studentów 18–25)
+
+START
+    |
+    v
+[Ekran powitalny]
+    |---> (Logowanie / Rejestracja) ---> [Dashboard główny]
+                                                                         /     |      |      \
+                                                                        v      v      v       v
+                                                 [Lista zadań] [Kalendarz] [Śledzenie postępów] [Ustawienia]
+                                                        |              |            |                   |
+             --------------------+--------------+------------+-------------------+----------------
+             |                    |              |            |                   |               |
+             v                    v              v            v                   v               v
+[Dodaj/Zedytuj zadanie] [Dodaj wydarzenie] [Aktualizuj postęp] [Powiadomienia] [Konto] [Integracje/Backup]
+        |  |  |  |               |  |               |  |               |  |             |        |
+        |  |  |  |               |  |               |  |               |  |             |        |
+        |  |  |  +--> Ustaw priorytet <--+           |  +--> Generuj statystyki <-+   Sync DB    |
+        |  |  +--> Ustal deadline      |           +--> Trendy, wykresy         |   (lokalny/ chmura)
+        |  +--> Oznacz jako ukończone  |           +--> Rekomendacje           |
+        +--> Powiąż z wydarzeniem -----+           +--> Progres tygodniowy -----+
+        |
+        v
+[Aktualizacja widoku Dashboard: liczba zadań, nadchodzące terminy, seria nauki]
+        |
+        v
+[Przypomnienia / Notyfikacje]
+        |---> Cykliczne przypomnienia (np. codzienna sesja)
+        |---> Push / E-mail / Lokalnie
+        |
+        v
+[Proste statystyki]
+        |---> Ukończone zadania / tydzień
+        |---> Czas poświęcony / temat
+        |---> Regularność (streaks)
+        |---> Efektywność (czas planowany vs zrealizowany)
+        |
+        v
+[Opcje eksportu i backupu]
+        |---> Eksport CSV / synchronizacja chmury / automatyczny backup
+        |
+        v
+END
+
+Rozszerzone uwagi implementacyjne:
+
+1) Architektura ogólna
+- Frontend: SPA (React / Vue) mobil-first, komponenty: Dashboard, TaskEditor, Calendar, Stats, Settings, Auth.
+- Backend: REST/GraphQL API (Node.js/Express, Python/Flask lub .NET), serwis autoryzacji (JWT + refresh tokens).
+- Storage: Lokalny DB (SQLite dla PWA / mobile) + opcjonalna synchronizacja z chmurą (Postgres / Firebase).
+- Worker: Kolejka zadań (Redis + Sidekiq / Bull) do powiadomień, backupów i generowania statystyk.
+- Integracje: Google Calendar (OAuth2), export CSV, opcjonalne sync z chmurą użytkownika.
+
+2) Model danych (przykładowe pola)
+- User: id, email, password_hash, name, timezone, prefs (json), last_sync
+- Task: id, user_id, title, description, created_at, updated_at, due_date, priority (high/med/low), status (todo/in_progress/done), estimated_minutes, actual_minutes, recurring_rule, linked_event_id, tags[]
+- Event: id, user_id, title, start, end, location, calendar_id, recurrence
+- Progress / Session: id, task_id, user_id, start_time, end_time, notes
+- Notification: id, user_id, type, scheduled_at, sent_at, channel, payload
+- BackupRecord: id, user_id, storage_type, timestamp, status, meta
+
+3) API endpoints (przykładowo REST)
+- POST /auth/register, POST /auth/login, POST /auth/refresh, POST /auth/logout
+- GET /tasks, POST /tasks, GET /tasks/:id, PUT /tasks/:id, DELETE /tasks/:id
+- POST /tasks/:id/complete, POST /tasks/:id/estimate, POST /tasks/:id/link-event
+- GET /events, POST /events, PUT /events/:id
+- GET /stats/overview, GET /stats/weekly, GET /stats/topics
+- POST /sync/backup, GET /sync/status
+- Webhooks: POST /webhooks/calendar (dla integracji kalendarzy)
+
+4) Logika priorytetów i sugestii (prosty algorytm)
+- Priorytet ręczny: High / Medium / Low
+- Sugestie automatyczne: score = w1*(due_urgency) + w2*(importance_tag) + w3*(user_history)
+  - due_urgency = 1 / max(1, days_to_due)
+  - importance_tag = mapa tagów (eg. „egzamin” -> 1.0, „zadanie” -> 0.6)
+  - user_history = częstotliwość ukończenia zadań z podobnym tagiem
+- Sortowanie domyślne: (status, priority_score, due_date, estimated_minutes)
+
+5) UI/UX szczegóły
+- Szybkie dodawanie: jedno pole + skróty (priorytet, deadline, tagi) + "Add and continue".
+- Drag & drop: przeciągnij task na kalendarz, automatyczne ustawienie czasu/termínu.
+- Widok dnia/tygodnia w kalendarzu + integracja z zadaniami (blok czasowy).
+- Powiadomienia: możliwość ustawienia domyślnego przypomnienia i reguł (np. 24h przed, 1h przed).
+- Tryb „Focus session”: timer Pomodoro z przypisaniem do zadania, zapis sesji do progresu.
+
+6) Powiadomienia & harmonogramy
+- Typy: jednorazowe, cykliczne (CRON-like), powiązane z deadline, przypomnienia o serii (streak).
+- Kanały: Lokal (PWA/APP), Push (Firebase Cloud Messaging), Email (SMTP / SendGrid).
+- Worker uruchamia powiadomienia na podstawie kolejki: planowanie -> enqueue -> send.
+- Retry policy: exponential backoff, max 3 próby.
+
+7) Backup i synchronizacja
+- Lokalny backup: okresowe zapisywanie snapshotów DB (co 24h) + możliwość eksportu CSV/JSON.
+- Chmurowy backup: szyfrowane przesyłanie snapshotów do S3 / Firebase Storage.
+- Sync: w modelu last-write-wins z wersjonowaniem; konflikt -> pokaz użytkownikowi lub merge rules (task updates as patches).
+- Opcja: end-to-end encryption kluczem użytkownika dla prywatnych backupów.
+
+8) Analytics i statystyki
+- Obliczane batched: nightly worker agreguje dane -> zapis do stats table.
+- KPI: tasks_done_per_week, avg_time_per_topic, completion_rate, longest_streak.
+- Wykresy: tygodniowe, miesięczne, per-tag heatmap.
+- Eksport: CSV/JSON dla okresów.
+
+9) Bezpieczeństwo i prywatność
+- Haszowanie haseł: Argon2 / bcrypt.
+- Transmission: TLS obligatoryjne.
+- Tokeny: JWT z krótkim TTL + refresh tokeny przechowywane bezpiecznie.
+- Dane wrażliwe: lokalne szyfrowanie pola notes/description opcjonalne.
+- GDPR: możliwość usunięcia konta i eksportu danych.
+
+10) Testy i monitoring
+- Testy jednostkowe: logika priorytetów, API endpoints.
+- Testy integracyjne: auth flow, sync, backup.
+- Telemetria: logowanie błędów (Sentry), metryki (Prometheus), alerty workerów.
+
+11) Plan wdrożenia MVP (minimalne funkcjonalności)
+- Core: CRUD zadań, prosty dashboard, lokalne powiadomienia, prosty kalendarz, eksport CSV.
+- Beta: synchronizacja chmurowa, integracja z Google Calendar, push notifications.
+- V1: statystyki, rekomendacje priorytetu, backup end-to-end, multidevice sync.
+
+12) Przykładowe scenariusze użytkownika (flow)
+- Dodanie zadania 30s: otwórz + wpisz tytuł + wybierz deadline + zapisz.
+- Planowanie sesji nauki: przeciągnij zadanie do kalendarza na 1h, ustaw przypomnienie 15min przed, uruchom timer.
+- Przywrócenie backupu: ustaw konto chmurowe -> wybierz snapshot -> import (merge lub replace).
+
+13) Drobne uwagi UX
+- Undo dla oznaczania jako ukończone (czasowe cofnięcie).
+- Inteligentne sugestie czasu (na podstawie historycznych session lengths).
+- Accessibility: kontrast, skalowalność fontów, obsługa keyboard navigation.
+
+Plik powyższy można wykorzystać jako rozwinięcie diagramu / specyfikację do implementacji. W razie potrzeby mogę:
+- rozbić model danych na konkretne schematy SQL,
+- przygotować listę konkretnych endpointów z przykładami request/response,
+- napisać prosty algorytm scoringowy w pseudokodzie lub w wybranym języku.

@@ -1,0 +1,33 @@
+i. Inspiracje (słowa, skojarzenia, pomysły)
+- edukacja, rozrywka, nauka przez zabawę
+- prosty UX, minimalizm, dostępność (a11y)
+- personalizacja, rekomendacje, adaptacja
+- offline-first, synchronizacja, mobilność
+- gamifikacja (odznaki, poziomy), mikrointerakcje
+- lokalne zasoby, społeczność, współpraca
+- automatyzacja rutynowych zadań, oszczędność czasu
+- integracje (API), rozszerzalność, pluginy
+
+ii. Krótka lista elementów projektu
+- ekran powitalny + onboarding
+- system użytkowników i role (student, nauczyciel, admin)
+- dashboard z rekomendacjami i statystykami
+- katalog kategorii + wyszukiwarka i tagowanie
+- moduł tworzenia/edytowania treści (formularze, markdown)
+- powiadomienia i historia aktywności
+- panel administracyjny i raporty
+- API do integracji z zewnętrznymi serwisami
+
+iii. Wstępne dane wejściowe
+- lista kategorii: "Nauka", "Programowanie", "Matematyka", "Języki", "Projekty"
+- lista funkcji: "rejestracja", "logowanie", "dodaj materiał", "komentarze", "oceny", "eksport danych"
+- role użytkownika: ["gość", "użytkownik", "moderator", "administrator"]
+- przykładowy zestaw treści: tytuł, opis, kategorie[], tagi[], autor, data, poziom trudności
+- preferencje użytkownika: język, powiadomienia, tryb offline
+
+iv. Lista źródeł pomysłu
+- własna potrzeba: brak prostego narzędzia do organizacji materiałów edukacyjnych
+- znajomy/nauczyciel: prośba o lepszy sposób dzielenia się zadaniami
+- obserwacja rynku: nisza w prostych aplikacjach lokalnych
+- przypadek: prototyp stworzony na hackathonie
+- inspiracje z istniejących serwisów (forki funkcji, uproszczenie UX)
